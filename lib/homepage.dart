@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_packmen_game/path.dart';
@@ -121,14 +122,68 @@ class _HomePageState extends State<HomePage> {
     129,
   ];
 
+  List<int> food = [];
+
+  String direction = "right";
+
   void startGame() {
+    getFood();
     Timer.periodic(Duration(milliseconds: 150), (timer) {
-      if (!barriers.contains(player + 1)) {
-        setState(() {
-          player++;
-        });
+      switch (direction) {
+        case "left":
+          moveLeft();
+          break;
+        case "right":
+          moveRight();
+          break;
+        case "up":
+          moveUp();
+          break;
+        case "down":
+          moveDown();
+          break;
       }
     });
+  }
+
+  void getFood() {
+    for (int i = 0; i < numberOfSquares; i++) {
+      if (!barriers.contains(i)) {
+        food.add(i);
+      }
+    }
+  }
+
+  void moveLeft() {
+    if (!barriers.contains(player - 1)) {
+      setState(() {
+        player--;
+      });
+    }
+  }
+
+  void moveRight() {
+    if (!barriers.contains(player + 1)) {
+      setState(() {
+        player++;
+      });
+    }
+  }
+
+  void moveUp() {
+    if (!barriers.contains(player - numberInRow)) {
+      setState(() {
+        player -= numberInRow;
+      });
+    }
+  }
+
+  void moveDown() {
+    if (!barriers.contains(player + numberInRow)) {
+      setState(() {
+        player += numberInRow;
+      });
+    }
   }
 
   @override
@@ -139,28 +194,71 @@ class _HomePageState extends State<HomePage> {
         children: [
           Expanded(
             flex: 5,
-            child: Container(
-              child: GridView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: numberOfSquares,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: numberInRow),
-                  itemBuilder: (BuildContext context, int index) {
-                    if (player == index) {
-                      return MyPlayer();
-                    } else if (barriers.contains(index)) {
-                      return MyPixel(
-                        innerColor: Colors.blue[800],
-                        outerColor: Colors.blue[900],
-                        //child: Text(index.toString()),
-                      );
-                    } else {
-                      return MyPath(
-                        innerColor: Colors.yellow,
-                        outerColor: Colors.black,
-                      );
-                    }
-                  }),
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                if (details.delta.dy > 0) {
+                  direction = "down";
+                } else if (details.delta.dy < 0) {
+                  direction = "up";
+                }
+              },
+              onHorizontalDragUpdate: (details) {
+                if (details.delta.dx > 0) {
+                  direction = "right";
+                } else if (details.delta.dx < 0) {
+                  direction = "left";
+                }
+              },
+              child: Container(
+                child: GridView.builder(
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: numberOfSquares,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: numberInRow),
+                    itemBuilder: (BuildContext context, int index) {
+                      if (player == index) {
+                        switch (direction) {
+                          case "left":
+                            return Transform.rotate(
+                              angle: pi,
+                              child: MyPlayer(),
+                            );
+                            break;
+
+                          case "right":
+                            return MyPlayer();
+                            break;
+
+                          case "up":
+                            return Transform.rotate(
+                              angle: 3 * pi / 2,
+                              child: MyPlayer(),
+                            );
+                            break;
+
+                          case "down":
+                            return Transform.rotate(
+                              angle: pi / 2,
+                              child: MyPlayer(),
+                            );
+                            break;
+                          default:
+                            return MyPlayer();
+                        }
+                      } else if (barriers.contains(index)) {
+                        return MyPixel(
+                          innerColor: Colors.blue[800],
+                          outerColor: Colors.blue[900],
+                          //child: Text(index.toString()),
+                        );
+                      } else {
+                        return MyPath(
+                          innerColor: Colors.yellow,
+                          outerColor: Colors.black,
+                        );
+                      }
+                    }),
+              ),
             ),
           ),
           Expanded(
