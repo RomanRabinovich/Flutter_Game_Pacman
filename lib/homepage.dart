@@ -125,10 +125,27 @@ class _HomePageState extends State<HomePage> {
   List<int> food = [];
 
   String direction = "right";
+  bool preGame = true;
+  bool mouthClosed = false;
+  int score = 0;
 
   void startGame() {
+    preGame = false;
     getFood();
-    Timer.periodic(Duration(milliseconds: 150), (timer) {
+    Timer.periodic(Duration(milliseconds: 120), (timer) {
+      setState(() {
+        mouthClosed = !mouthClosed;
+      });
+
+      if (food.contains(player)) {
+        food.remove(player);
+        score++;
+      }
+
+      if (player == ghost) {
+        ghost = -1;
+      }
+
       switch (direction) {
         case "left":
           moveLeft();
@@ -145,6 +162,10 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
+
+  int ghost = numberInRow * 2 - 2;
+  String ghostDirection = "left";
+  void moveGhost() {}
 
   void getFood() {
     for (int i = 0; i < numberOfSquares; i++) {
@@ -216,7 +237,15 @@ class _HomePageState extends State<HomePage> {
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: numberInRow),
                     itemBuilder: (BuildContext context, int index) {
-                      if (player == index) {
+                      if (mouthClosed && player == index) {
+                        return Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Colors.yellow, shape: BoxShape.circle),
+                          ),
+                        );
+                      } else if (player == index) {
                         switch (direction) {
                           case "left":
                             return Transform.rotate(
@@ -251,9 +280,14 @@ class _HomePageState extends State<HomePage> {
                           outerColor: Colors.blue[900],
                           //child: Text(index.toString()),
                         );
-                      } else {
+                      } else if (food.contains(index) || preGame) {
                         return MyPath(
                           innerColor: Colors.yellow,
+                          outerColor: Colors.black,
+                        );
+                      } else {
+                        return MyPath(
+                          innerColor: Colors.black,
                           outerColor: Colors.black,
                         );
                       }
@@ -267,7 +301,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Text(
-                  'Score: ',
+                  'Score: ' + score.toString(),
                   style: TextStyle(color: Colors.white, fontSize: 40),
                 ),
                 GestureDetector(
